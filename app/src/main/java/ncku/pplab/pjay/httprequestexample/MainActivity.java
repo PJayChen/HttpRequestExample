@@ -1,5 +1,8 @@
 package ncku.pplab.pjay.httprequestexample;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -47,11 +50,24 @@ public class MainActivity extends ActionBarActivity {
                 //Invoke asynchornized task to execute the http POST
                 //Due to access the Internet resource can invoke unpredictable delays,
                 //use main thread to do http post will assert exception
-                new HttpRequestTask().execute();
+                if (checkInternet())
+                    new HttpRequestTask().execute();
+                else
+                    respTextView.setText("Please connect to Internet\n");
             }
         });
     }
 
+    private boolean checkInternet() {
+        ConnectivityManager connMgr =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if ( networkInfo != null && networkInfo.isConnected() ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     private String doPOST() {
         HttpURLConnection httpConn = null;
@@ -96,8 +112,7 @@ public class MainActivity extends ActionBarActivity {
             char[] buffer = new char[200];
             int cnt;
             cnt = reader.read(buffer);
-
-//            buffer[cnt - 1] = '\0';
+            //pick out used bytes in buffer
             String bufferStr = new String(buffer, 0, cnt);
 
             Log.v("POST", "response msg" + "(" + (cnt) + " bytes)" + ": " + bufferStr);
@@ -112,7 +127,7 @@ public class MainActivity extends ActionBarActivity {
                 httpConn.disconnect();
             }
         }
-        return new String("Fail");
+        return new String("Fail, maybe no Internet");
     }
 
     // AsyncTask class
